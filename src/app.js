@@ -16,7 +16,7 @@ app.use(helmet());
 
 // CORS configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : ['http://localhost:3000'];
 
 app.use(cors({
@@ -25,15 +25,23 @@ app.use(cors({
     if (!origin) return callback(null, true);
 
     // Allow chrome-extension:// origins
-    if (origin.startsWith('chrome-extension://')) {
+    if (origin && origin.startsWith('chrome-extension://')) {
       return callback(null, true);
     }
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    // Check if origin is in allowed list
+    if (origin && allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
     }
+
+    // For development/testing - allow Railway domain
+    if (origin && origin.includes('railway.app')) {
+      return callback(null, true);
+    }
+
+    // Log rejected origins for debugging
+    console.log('❌ CORS rejected origin:', origin);
+    callback(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
