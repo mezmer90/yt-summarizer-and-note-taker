@@ -7,36 +7,49 @@ const { generateAdminToken } = require('../config/jwt');
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('🔐 Login attempt for:', email);
 
     if (!email || !password) {
+      console.log('❌ Missing email or password');
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
     // Get admin user
+    console.log('📝 Querying database for admin user...');
     const result = await query(
       'SELECT * FROM admin_users WHERE email = $1 AND is_active = true',
       [email]
     );
 
+    console.log('📊 Query result:', result.rows.length, 'rows found');
+
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      console.log('❌ No admin user found with email:', email);
+      return res.status(401).json({ error: 'Invalid credentials - user not found' });
     }
 
     const admin = result.rows[0];
+    console.log('👤 Admin user found:', admin.email, '| Active:', admin.is_active);
 
     // Verify password
+    console.log('🔑 Verifying password...');
     const validPassword = await bcrypt.compare(password, admin.password_hash);
+    console.log('🔑 Password valid:', validPassword);
+
     if (!validPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      console.log('❌ Invalid password for:', email);
+      return res.status(401).json({ error: 'Invalid credentials - wrong password' });
     }
 
     // Update last login
+    console.log('📝 Updating last login timestamp...');
     await query(
       'UPDATE admin_users SET last_login = NOW() WHERE id = $1',
       [admin.id]
     );
 
     // Generate JWT token
+    console.log('🎫 Generating JWT token...');
     const token = generateAdminToken(admin.email);
 
     console.log('✅ Admin login successful:', admin.email);
@@ -50,8 +63,9 @@ const adminLogin = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error in adminLogin:', error);
-    res.status(500).json({ error: 'Login failed' });
+    console.error('💥 Error in adminLogin:', error.message);
+    console.error('💥 Full error:', error);
+    res.status(500).json({ error: 'Login failed: ' + error.message });
   }
 };
 
