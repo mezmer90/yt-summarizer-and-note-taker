@@ -1,5 +1,11 @@
 // Email Configuration - Nodemailer
-const nodemailer = require('nodemailer');
+let nodemailer;
+try {
+  nodemailer = require('nodemailer');
+} catch (error) {
+  console.error('❌ Nodemailer package not found. Run: npm install nodemailer');
+  process.exit(1);
+}
 
 let transporter;
 
