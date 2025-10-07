@@ -63,6 +63,7 @@
       <div class="tabs">
         <button class="tab active" data-tab="models">Model Configuration</button>
         <button class="tab" data-tab="users">Users</button>
+        <button class="tab" data-tab="students">Student Verifications</button>
         <button class="tab" data-tab="settings">Settings</button>
         <button class="tab" data-tab="logs">Logs</button>
       </div>
@@ -78,6 +79,18 @@
       <div id="usersTab" class="tab-content">
         <h2>User Management</h2>
         <div id="usersList" class="users-table"></div>
+      </div>
+
+      <!-- Student Verifications Tab -->
+      <div id="studentsTab" class="tab-content">
+        <h2>Student Verification Requests</h2>
+        <div class="filter-buttons">
+          <button class="filter-btn active" data-filter="pending">Pending</button>
+          <button class="filter-btn" data-filter="approved">Approved</button>
+          <button class="filter-btn" data-filter="rejected">Rejected</button>
+          <button class="filter-btn" data-filter="all">All</button>
+        </div>
+        <div id="studentsList" class="students-table"></div>
       </div>
 
       <!-- Settings Tab -->

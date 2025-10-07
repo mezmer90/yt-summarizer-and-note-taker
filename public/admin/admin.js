@@ -91,6 +91,7 @@ async function loadDashboardData() {
     loadStats(),
     loadModels(),
     loadUsers(),
+    loadStudentVerifications('pending'),
     loadSettings(),
     loadLogs()
   ]);
@@ -391,3 +392,153 @@ function switchTab(tabName) {
   });
   document.getElementById(`${tabName}Tab`).classList.add('active');
 }
+
+// ===== Student Verification Management =====
+
+let currentStudentFilter = 'pending';
+
+// Load student verifications
+async function loadStudentVerifications(status = 'pending') {
+  try {
+    const endpoint = status === 'pending'
+      ? `${API_BASE}/students/admin/pending`
+      : `${API_BASE}/students/admin/all?status=${status === 'all' ? '' : status}`;
+
+    const response = await fetch(endpoint, {
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data.message);
+
+    renderStudentVerifications(data.verifications);
+  } catch (error) {
+    console.error('Error loading student verifications:', error);
+    document.getElementById('studentsList').innerHTML = `
+      <div class="error-message">Failed to load verifications: ${error.message}</div>
+    `;
+  }
+}
+
+// Render student verifications table
+function renderStudentVerifications(verifications) {
+  const container = document.getElementById('studentsList');
+
+  if (!verifications || verifications.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <p>No ${currentStudentFilter === 'all' ? '' : currentStudentFilter} student verification requests found.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const html = `
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Email</th>
+          <th>University</th>
+          <th>Graduation Year</th>
+          <th>Status</th>
+          <th>Requested</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${verifications.map(v => `
+          <tr>
+            <td>#${v.id}</td>
+            <td>${v.email}</td>
+            <td>${v.university_name || 'N/A'}</td>
+            <td>${v.graduation_year || 'N/A'}</td>
+            <td>
+              <span class="status-badge status-${v.status}">${v.status.toUpperCase()}</span>
+            </td>
+            <td>${new Date(v.requested_at).toLocaleDateString()}</td>
+            <td>
+              ${v.status === 'pending' ? `
+                <button class="btn-approve" onclick="approveStudent(${v.id})">✓ Approve</button>
+                <button class="btn-reject" onclick="rejectStudent(${v.id})">✗ Reject</button>
+              ` : v.status === 'approved' ? `
+                <span style="color: green;">✓ Approved by ${v.reviewed_by}</span>
+                <br><small>Expires: ${new Date(v.expires_at).toLocaleDateString()}</small>
+              ` : `
+                <span style="color: red;">✗ Rejected</span>
+                <br><small>${v.rejection_reason}</small>
+              `}
+              ${v.student_id_url ? `<br><a href="${v.student_id_url}" target="_blank" class="btn-view-doc">View ID</a>` : ''}
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  container.innerHTML = html;
+}
+
+// Approve student verification
+async function approveStudent(id) {
+  if (!confirm('Approve this student verification? They will receive student discount for 1 year.')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/students/admin/approve/${id}`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data.message);
+
+    alert('✓ Student verification approved!');
+    loadStudentVerifications(currentStudentFilter);
+  } catch (error) {
+    console.error('Error approving verification:', error);
+    alert('Error: ' + error.message);
+  }
+}
+
+// Reject student verification
+async function rejectStudent(id) {
+  const reason = prompt('Enter rejection reason:');
+  if (!reason) return;
+
+  try {
+    const response = await fetch(`${API_BASE}/students/admin/reject/${id}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ reason })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data.message);
+
+    alert('✗ Student verification rejected');
+    loadStudentVerifications(currentStudentFilter);
+  } catch (error) {
+    console.error('Error rejecting verification:', error);
+    alert('Error: ' + error.message);
+  }
+}
+
+// Setup filter buttons
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentStudentFilter = btn.dataset.filter;
+      loadStudentVerifications(currentStudentFilter);
+    });
+  });
+});

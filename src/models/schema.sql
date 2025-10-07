@@ -90,6 +90,22 @@ CREATE TABLE IF NOT EXISTS payment_events (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Student Verification Requests
+CREATE TABLE IF NOT EXISTS student_verifications (
+  id SERIAL PRIMARY KEY,
+  extension_user_id VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  student_id_url TEXT,
+  university_name VARCHAR(255),
+  graduation_year INTEGER,
+  status VARCHAR(50) DEFAULT 'pending',
+  requested_at TIMESTAMP DEFAULT NOW(),
+  reviewed_by VARCHAR(255),
+  reviewed_at TIMESTAMP,
+  rejection_reason TEXT,
+  expires_at TIMESTAMP
+);
+
 -- System Settings (Global Config)
 CREATE TABLE IF NOT EXISTS system_settings (
   id SERIAL PRIMARY KEY,
@@ -108,6 +124,8 @@ CREATE INDEX IF NOT EXISTS idx_usage_extension_id ON user_usage(extension_user_i
 CREATE INDEX IF NOT EXISTS idx_usage_date ON user_usage(date);
 CREATE INDEX IF NOT EXISTS idx_payment_events_extension_id ON payment_events(extension_user_id);
 CREATE INDEX IF NOT EXISTS idx_admin_actions_admin ON admin_actions(admin_email);
+CREATE INDEX IF NOT EXISTS idx_student_verifications_extension_id ON student_verifications(extension_user_id);
+CREATE INDEX IF NOT EXISTS idx_student_verifications_status ON student_verifications(status);
 
 -- Triggers for updated_at timestamps
 CREATE OR REPLACE FUNCTION update_updated_at_column()
