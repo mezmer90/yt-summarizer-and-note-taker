@@ -3,6 +3,15 @@ const transporter = require('../config/email');
 
 const sendEmail = async ({ to, subject, html, text }) => {
   try {
+    // Check if transporter is the stub (email service disabled)
+    if (!transporter || !transporter.sendMail || typeof transporter.sendMail !== 'function') {
+      console.error('❌ Email service not available - nodemailer not loaded');
+      return {
+        success: false,
+        error: 'Email service not configured. Please check Railway logs for nodemailer errors.'
+      };
+    }
+
     const mailOptions = {
       from: `"${process.env.FROM_EMAIL_NAME || 'YouTube Summarizer Pro'}" <${process.env.EMAIL_USER}>`,
       to,
