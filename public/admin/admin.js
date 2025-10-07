@@ -248,16 +248,54 @@ async function loadSettings() {
     const data = await response.json();
     const settingsContainer = document.getElementById('settingsList');
 
-    settingsContainer.innerHTML = Object.entries(data.settings).map(([key, setting]) => `
-      <div class="setting-item">
-        <label>
-          <strong>${key.replace(/_/g, ' ').toUpperCase()}</strong>
-          <br><small>${setting.description}</small>
-        </label>
-        <input type="text" id="setting-${key}" value="${setting.value}">
-        <button onclick="updateSetting('${key}')">Save</button>
-      </div>
-    `).join('');
+    settingsContainer.innerHTML = Object.entries(data.settings).map(([key, setting]) => {
+      // Check if this is a boolean setting (true/false value)
+      const isBooleanSetting = setting.value === 'true' || setting.value === 'false';
+      const isChecked = setting.value === 'true';
+
+      // Render toggle switch for boolean settings
+      if (isBooleanSetting) {
+        return `
+          <div class="setting-item">
+            <label>
+              <strong>${key.replace(/_/g, ' ').toUpperCase()}</strong>
+              <br><small>${setting.description}</small>
+            </label>
+            <label class="toggle-switch">
+              <input type="checkbox" id="setting-${key}" ${isChecked ? 'checked' : ''}
+                     onchange="updateSetting('${key}')">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        `;
+      }
+
+      // Render password input for API keys
+      if (key.includes('key') || key.includes('secret')) {
+        return `
+          <div class="setting-item">
+            <label>
+              <strong>${key.replace(/_/g, ' ').toUpperCase()}</strong>
+              <br><small>${setting.description}</small>
+            </label>
+            <input type="password" id="setting-${key}" value="${setting.value}" placeholder="Enter API key...">
+            <button onclick="updateSetting('${key}')">Save</button>
+          </div>
+        `;
+      }
+
+      // Render text input for other settings
+      return `
+        <div class="setting-item">
+          <label>
+            <strong>${key.replace(/_/g, ' ').toUpperCase()}</strong>
+            <br><small>${setting.description}</small>
+          </label>
+          <input type="text" id="setting-${key}" value="${setting.value}">
+          <button onclick="updateSetting('${key}')">Save</button>
+        </div>
+      `;
+    }).join('');
   } catch (error) {
     console.error('Error loading settings:', error);
   }
@@ -266,7 +304,14 @@ async function loadSettings() {
 // Update setting
 async function updateSetting(key) {
   const inputEl = document.getElementById(`setting-${key}`);
-  const value = inputEl.value;
+
+  // Get value based on input type
+  let value;
+  if (inputEl.type === 'checkbox') {
+    value = inputEl.checked ? 'true' : 'false';
+  } else {
+    value = inputEl.value;
+  }
 
   try {
     const response = await fetch(`${API_BASE}/admin/settings/${key}`, {
@@ -280,10 +325,20 @@ async function updateSetting(key) {
 
     if (!response.ok) throw new Error('Failed to update setting');
 
-    alert(`✅ Setting updated!`);
+    // Show success message
+    if (inputEl.type === 'checkbox') {
+      console.log(`✅ ${key} updated to: ${value}`);
+      // Auto-save for toggles, no alert needed
+    } else {
+      alert(`✅ Setting updated!`);
+    }
   } catch (error) {
     alert('❌ Failed to update setting');
     console.error(error);
+    // Revert checkbox on error
+    if (inputEl.type === 'checkbox') {
+      inputEl.checked = !inputEl.checked;
+    }
   }
 }
 
