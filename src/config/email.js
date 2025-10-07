@@ -1,5 +1,7 @@
 // Email Configuration - Nodemailer
 let nodemailer;
+let transporter = null;
+
 try {
   nodemailer = require('nodemailer');
 
@@ -18,11 +20,16 @@ try {
   }
 } catch (error) {
   console.error('❌ Nodemailer loading error:', error);
-  console.error('Make sure nodemailer is installed: npm install nodemailer@6.9.7');
-  process.exit(1);
-}
+  console.error('⚠️ Email service will be disabled. Server will continue to run.');
+  console.error('To fix: npm install nodemailer@6.9.7');
 
-let transporter;
+  // Don't exit - let server start without email
+  module.exports = {
+    verify: (callback) => callback(new Error('Email service not available'), false),
+    sendMail: async () => ({ success: false, error: 'Email service not configured' })
+  };
+  return;
+}
 
 // Initialize email transporter based on service
 if (process.env.EMAIL_SERVICE === 'gmail') {
