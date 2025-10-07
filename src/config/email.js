@@ -1,4 +1,9 @@
 // Email Configuration - Nodemailer
+console.log('🔄 Loading email configuration...');
+console.log('   EMAIL_SERVICE:', process.env.EMAIL_SERVICE);
+console.log('   EMAIL_USER:', process.env.EMAIL_USER ? '✓ Set' : '✗ Not set');
+console.log('   EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? '✓ Set (length: ' + process.env.EMAIL_PASSWORD.length + ')' : '✗ Not set');
+
 const nodemailer = require('nodemailer');
 
 let transporter;
@@ -7,6 +12,7 @@ try {
   // Initialize email transporter based on service
   if (process.env.EMAIL_SERVICE === 'gmail') {
     // Gmail configuration
+    console.log('📧 Configuring Gmail transporter...');
     transporter = nodemailer.createTransporter({
       service: 'gmail',
       auth: {
@@ -14,7 +20,7 @@ try {
         pass: process.env.EMAIL_PASSWORD
       }
     });
-    console.log('📧 Email service configured: Gmail');
+    console.log('✅ Gmail transporter created successfully');
   } else if (process.env.EMAIL_SERVICE === 'sendgrid') {
     // SendGrid configuration
     transporter = nodemailer.createTransporter({
