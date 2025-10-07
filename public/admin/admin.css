@@ -279,9 +279,9 @@ th {
 .toggle-switch {
   position: relative;
   display: inline-block;
-  width: 56px;
-  height: 28px;
-  margin-left: 10px;
+  width: 50px;
+  height: 24px;
+  flex-shrink: 0;
 }
 
 .toggle-switch input {
@@ -299,16 +299,16 @@ th {
   bottom: 0;
   background-color: #ccc;
   transition: 0.3s;
-  border-radius: 28px;
+  border-radius: 24px;
 }
 
 .toggle-slider:before {
   position: absolute;
   content: "";
-  height: 20px;
-  width: 20px;
-  left: 4px;
-  bottom: 4px;
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
   background-color: white;
   transition: 0.3s;
   border-radius: 50%;
@@ -323,7 +323,7 @@ th {
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
-  transform: translateX(28px);
+  transform: translateX(26px);
 }
 
 /* Disabled state */
