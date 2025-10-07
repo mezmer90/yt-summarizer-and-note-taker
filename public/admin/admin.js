@@ -460,8 +460,8 @@ function renderStudentVerifications(verifications) {
             <td>${new Date(v.requested_at).toLocaleDateString()}</td>
             <td>
               ${v.status === 'pending' || v.status === 'email_pending' ? `
-                <button class="btn-approve" onclick="approveStudent(${v.id})" ${v.status === 'email_pending' ? 'disabled title="Email not verified yet"' : ''}>✓ Approve</button>
-                <button class="btn-reject" onclick="rejectStudent(${v.id})">✗ Reject</button>
+                <button class="btn-approve" data-student-id="${v.id}" ${v.status === 'email_pending' ? 'disabled title="Email not verified yet"' : ''}>✓ Approve</button>
+                <button class="btn-reject" data-student-id="${v.id}">✗ Reject</button>
                 <br>
               ` : v.status === 'approved' ? `
                 <span style="color: green;">✓ Approved by ${v.reviewed_by}</span>
@@ -473,7 +473,7 @@ function renderStudentVerifications(verifications) {
                 <br>
               `}
               ${v.student_id_url ? `<a href="${v.student_id_url}" target="_blank" class="btn-view-doc">View ID</a>` : ''}
-              <button class="btn-delete" onclick="deleteStudent(${v.id})" style="margin-top: 5px;">🗑️ Delete</button>
+              <button class="btn-delete" data-student-id="${v.id}" style="margin-top: 5px;">🗑️ Delete</button>
             </td>
           </tr>
         `).join('')}
@@ -643,3 +643,30 @@ async function sendTestEmail() {
     button.textContent = '📨 Send Test Email';
   }
 }
+
+// Event delegation for student verification action buttons
+document.addEventListener('click', (e) => {
+  // Approve button
+  if (e.target.classList.contains('btn-approve')) {
+    const studentId = e.target.getAttribute('data-student-id');
+    if (studentId) {
+      approveStudent(parseInt(studentId));
+    }
+  }
+
+  // Reject button
+  if (e.target.classList.contains('btn-reject')) {
+    const studentId = e.target.getAttribute('data-student-id');
+    if (studentId) {
+      rejectStudent(parseInt(studentId));
+    }
+  }
+
+  // Delete button
+  if (e.target.classList.contains('btn-delete')) {
+    const studentId = e.target.getAttribute('data-student-id');
+    if (studentId) {
+      deleteStudent(parseInt(studentId));
+    }
+  }
+});
