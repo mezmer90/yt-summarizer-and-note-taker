@@ -2,8 +2,23 @@
 let nodemailer;
 try {
   nodemailer = require('nodemailer');
+
+  // Debug logging
+  console.log('Nodemailer loaded. Type:', typeof nodemailer);
+  console.log('Has createTransporter?', typeof nodemailer.createTransporter);
+
+  // Handle ES6 default export
+  if (!nodemailer.createTransporter && nodemailer.default) {
+    nodemailer = nodemailer.default;
+    console.log('Using nodemailer.default');
+  }
+
+  if (typeof nodemailer.createTransporter !== 'function') {
+    throw new Error('nodemailer.createTransporter is not a function');
+  }
 } catch (error) {
-  console.error('❌ Nodemailer package not found. Run: npm install nodemailer');
+  console.error('❌ Nodemailer loading error:', error);
+  console.error('Make sure nodemailer is installed: npm install nodemailer@6.9.7');
   process.exit(1);
 }
 
