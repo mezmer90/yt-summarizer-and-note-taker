@@ -459,17 +459,21 @@ function renderStudentVerifications(verifications) {
             </td>
             <td>${new Date(v.requested_at).toLocaleDateString()}</td>
             <td>
-              ${v.status === 'pending' ? `
-                <button class="btn-approve" onclick="approveStudent(${v.id})">✓ Approve</button>
+              ${v.status === 'pending' || v.status === 'email_pending' ? `
+                <button class="btn-approve" onclick="approveStudent(${v.id})" ${v.status === 'email_pending' ? 'disabled title="Email not verified yet"' : ''}>✓ Approve</button>
                 <button class="btn-reject" onclick="rejectStudent(${v.id})">✗ Reject</button>
+                <br>
               ` : v.status === 'approved' ? `
                 <span style="color: green;">✓ Approved by ${v.reviewed_by}</span>
                 <br><small>Expires: ${new Date(v.expires_at).toLocaleDateString()}</small>
+                <br>
               ` : `
                 <span style="color: red;">✗ Rejected</span>
                 <br><small>${v.rejection_reason}</small>
+                <br>
               `}
-              ${v.student_id_url ? `<br><a href="${v.student_id_url}" target="_blank" class="btn-view-doc">View ID</a>` : ''}
+              ${v.student_id_url ? `<a href="${v.student_id_url}" target="_blank" class="btn-view-doc">View ID</a>` : ''}
+              <button class="btn-delete" onclick="deleteStudent(${v.id})" style="margin-top: 5px;">🗑️ Delete</button>
             </td>
           </tr>
         `).join('')}
@@ -527,6 +531,30 @@ async function rejectStudent(id) {
     loadStudentVerifications(currentStudentFilter);
   } catch (error) {
     console.error('Error rejecting verification:', error);
+    alert('Error: ' + error.message);
+  }
+}
+
+// Delete student verification
+async function deleteStudent(id) {
+  if (!confirm('⚠️ Are you sure you want to DELETE this student verification?\n\nThis action cannot be undone!\n\nUse this for testing or to remove duplicate/spam entries.')) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/students/admin/delete/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${authToken}` }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) throw new Error(data.message);
+
+    alert('🗑️ Student verification deleted successfully');
+    loadStudentVerifications(currentStudentFilter);
+  } catch (error) {
+    console.error('Error deleting verification:', error);
     alert('Error: ' + error.message);
   }
 }
