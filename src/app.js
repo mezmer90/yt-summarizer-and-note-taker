@@ -66,10 +66,12 @@ app.use('/success', express.static(path.join(__dirname, '../public/success')));
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({
+  console.log('Health check requested from:', req.ip);
+  res.status(200).json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    uptime: process.uptime()
   });
 });
 

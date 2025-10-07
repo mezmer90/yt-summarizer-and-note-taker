@@ -4,33 +4,67 @@ const app = require('./src/app');
 const { pool } = require('./src/config/database');
 
 const PORT = process.env.PORT || 3000;
+const HOST = '0.0.0.0';
+
+let isShuttingDown = false;
 
 // Graceful shutdown handler
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing HTTP server');
-  await pool.end();
-  process.exit(0);
-});
+const shutdown = async (signal) => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
 
-process.on('SIGINT', async () => {
-  console.log('SIGINT signal received: closing HTTP server');
-  await pool.end();
-  process.exit(0);
-});
+  console.log(`${signal} signal received: closing HTTP server`);
+
+  server.close(async () => {
+    console.log('HTTP server closed');
+    try {
+      await pool.end();
+      console.log('Database pool closed');
+      process.exit(0);
+    } catch (error) {
+      console.error('Error during shutdown:', error);
+      process.exit(1);
+    }
+  });
+
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 // Start server - bind to 0.0.0.0 for Railway
-const server = app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, HOST, () => {
   console.log('=================================');
   console.log('🚀 Server is running!');
+  console.log(`📡 Host: ${HOST}`);
   console.log(`📡 Port: ${PORT}`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`👨‍💼 Admin dashboard: http://localhost:${PORT}/admin`);
+  console.log(`🔗 Health check: http://${HOST}:${PORT}/health`);
+  console.log(`👨‍💼 Admin dashboard: http://${HOST}:${PORT}/admin`);
   console.log('=================================');
 });
 
 // Handle server errors
 server.on('error', (error) => {
   console.error('❌ Server error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
+  }
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
 });
