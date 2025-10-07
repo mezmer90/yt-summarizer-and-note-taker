@@ -4,7 +4,21 @@ console.log('   EMAIL_SERVICE:', process.env.EMAIL_SERVICE);
 console.log('   EMAIL_USER:', process.env.EMAIL_USER ? '✓ Set' : '✗ Not set');
 console.log('   EMAIL_PASSWORD:', process.env.EMAIL_PASSWORD ? '✓ Set (length: ' + process.env.EMAIL_PASSWORD.length + ')' : '✗ Not set');
 
-const nodemailer = require('nodemailer');
+let nodemailer;
+try {
+  nodemailer = require('nodemailer');
+  console.log('   Nodemailer type:', typeof nodemailer);
+  console.log('   Has createTransporter?', typeof nodemailer.createTransporter);
+
+  // Handle different module formats
+  if (nodemailer.default && typeof nodemailer.default.createTransporter === 'function') {
+    console.log('   Using nodemailer.default');
+    nodemailer = nodemailer.default;
+  }
+} catch (requireError) {
+  console.error('❌ Failed to require nodemailer:', requireError.message);
+  throw requireError;
+}
 
 let transporter;
 
@@ -13,6 +27,11 @@ try {
   if (process.env.EMAIL_SERVICE === 'gmail') {
     // Gmail configuration
     console.log('📧 Configuring Gmail transporter...');
+
+    if (typeof nodemailer.createTransporter !== 'function') {
+      throw new Error('nodemailer.createTransporter is not a function. Type: ' + typeof nodemailer.createTransporter);
+    }
+
     transporter = nodemailer.createTransporter({
       service: 'gmail',
       auth: {

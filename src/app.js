@@ -68,10 +68,25 @@ app.use('/success', express.static(path.join(__dirname, '../public/success')));
 // Health check
 app.get('/health', (req, res) => {
   console.log('Health check requested from:', req.ip);
+
+  // Check email service status
+  let emailStatus = 'unknown';
+  try {
+    const transporter = require('./config/email');
+    if (transporter && typeof transporter.sendMail === 'function') {
+      emailStatus = 'configured';
+    } else {
+      emailStatus = 'not_configured';
+    }
+  } catch (error) {
+    emailStatus = 'error: ' + error.message;
+  }
+
   res.status(200).json({
     status: 'ok',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development',
+    emailService: emailStatus,
     uptime: process.uptime()
   });
 });
