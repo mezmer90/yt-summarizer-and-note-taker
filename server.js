@@ -18,8 +18,8 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-// Start server
-const server = app.listen(PORT, () => {
+// Start server - bind to 0.0.0.0 for Railway
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('=================================');
   console.log('🚀 Server is running!');
   console.log(`📡 Port: ${PORT}`);
