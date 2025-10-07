@@ -7,6 +7,13 @@ yarn.lock
 .env
 .env.local
 .env.production
+.env.*
+
+# Security - Never commit credentials
+**/credentials.json
+**/secrets.json
+**/*-credentials.*
+**/*-secrets.*
 
 # Logs
 logs/
