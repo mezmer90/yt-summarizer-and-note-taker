@@ -1,16 +1,23 @@
 // Server Entry Point
-require('dotenv').config();
+// Load .env only in development (Railway uses environment variables directly)
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config();
+}
+
+console.log('=================================');
+console.log('🔍 Environment Check:');
+console.log('- PORT:', process.env.PORT || '(not set, will use 3000)');
+console.log('- HOST:', process.env.HOST || '(not set, will use 0.0.0.0)');
+console.log('- NODE_ENV:', process.env.NODE_ENV || '(not set)');
+console.log('- DATABASE_URL:', process.env.DATABASE_URL ? '✅ SET' : '❌ NOT SET');
+console.log('=================================');
+
 const app = require('./src/app');
 const { pool } = require('./src/config/database');
 
-const PORT = process.env.PORT || 3000;
+// Use Railway's assigned PORT or fallback to 3000
+const PORT = parseInt(process.env.PORT, 10) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
-
-console.log('Environment variables:');
-console.log('- PORT:', process.env.PORT || '(not set, using 3000)');
-console.log('- HOST:', process.env.HOST || '(not set, using 0.0.0.0)');
-console.log('- NODE_ENV:', process.env.NODE_ENV || '(not set)');
-console.log('- DATABASE_URL:', process.env.DATABASE_URL ? '(set)' : '(NOT SET)');
 
 let isShuttingDown = false;
 
