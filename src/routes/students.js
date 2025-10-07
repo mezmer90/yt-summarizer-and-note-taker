@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
-const { authenticateAdmin } = require('../middleware/auth');
+const { requireAdmin } = require('../middleware/auth');
 
 // Submit student verification request
 router.post('/verify', async (req, res) => {
@@ -101,7 +101,7 @@ router.get('/status/:extension_user_id', async (req, res) => {
 });
 
 // Admin: Get all pending verifications
-router.get('/admin/pending', authenticateAdmin, async (req, res) => {
+router.get('/admin/pending', requireAdmin, async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT sv.*, u.email as user_email, u.tier, u.plan_name
@@ -126,7 +126,7 @@ router.get('/admin/pending', authenticateAdmin, async (req, res) => {
 });
 
 // Admin: Get all verifications (with filters)
-router.get('/admin/all', authenticateAdmin, async (req, res) => {
+router.get('/admin/all', requireAdmin, async (req, res) => {
   try {
     const { status, limit = 50 } = req.query;
 
@@ -162,7 +162,7 @@ router.get('/admin/all', authenticateAdmin, async (req, res) => {
 });
 
 // Admin: Approve verification
-router.post('/admin/approve/:id', authenticateAdmin, async (req, res) => {
+router.post('/admin/approve/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const adminEmail = req.admin.email;
@@ -212,7 +212,7 @@ router.post('/admin/approve/:id', authenticateAdmin, async (req, res) => {
 });
 
 // Admin: Reject verification
-router.post('/admin/reject/:id', authenticateAdmin, async (req, res) => {
+router.post('/admin/reject/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
