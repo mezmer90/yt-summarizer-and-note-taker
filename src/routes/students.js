@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
 const { requireAdmin } = require('../middleware/auth');
+const crypto = require('crypto');
+const { sendStudentVerificationEmail, sendStudentApprovalEmail } = require('../services/emailService');
 
 // Submit student verification request
 router.post('/verify', async (req, res) => {
@@ -17,8 +19,8 @@ router.post('/verify', async (req, res) => {
 
     // Check if user already has a pending or approved request
     const existingRequest = await pool.query(
-      'SELECT * FROM student_verifications WHERE extension_user_id = $1 AND status IN ($2, $3)',
-      [extension_user_id, 'pending', 'approved']
+      'SELECT * FROM student_verifications WHERE extension_user_id = $1 AND status IN ($2, $3, $4)',
+      [extension_user_id, 'email_pending', 'pending', 'approved']
     );
 
     if (existingRequest.rows.length > 0) {
@@ -27,23 +29,44 @@ router.post('/verify', async (req, res) => {
         success: false,
         message: status === 'approved'
           ? 'You already have an approved student verification'
+          : status === 'email_pending'
+          ? 'Please check your email and click the verification link'
           : 'You already have a pending verification request'
       });
     }
 
-    // Insert new verification request
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Insert new verification request with email_pending status
     const result = await pool.query(
       `INSERT INTO student_verifications
-       (extension_user_id, email, university_name, graduation_year, student_id_url, status)
-       VALUES ($1, $2, $3, $4, $5, $6)
+       (extension_user_id, email, university_name, graduation_year, student_id_url,
+        status, email_verified, verification_token, token_expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [extension_user_id, email, university_name, graduation_year, student_id_url, 'pending']
+      [extension_user_id, email, university_name, graduation_year, student_id_url,
+       'email_pending', false, verificationToken, tokenExpiresAt]
     );
+
+    // Send verification email
+    try {
+      await sendStudentVerificationEmail(email, verificationToken);
+      console.log(`✅ Verification email sent to ${email}`);
+    } catch (emailError) {
+      console.error('❌ Error sending verification email:', emailError);
+      // Continue even if email fails - user can contact support
+    }
 
     res.json({
       success: true,
-      message: 'Student verification request submitted. Admin will review within 24 hours.',
-      verification: result.rows[0]
+      message: 'Verification email sent! Please check your inbox and click the link to verify your email.',
+      verification: {
+        id: result.rows[0].id,
+        email: result.rows[0].email,
+        status: result.rows[0].status
+      }
     });
 
   } catch (error) {
@@ -52,6 +75,112 @@ router.post('/verify', async (req, res) => {
       success: false,
       message: 'Failed to submit verification request'
     });
+  }
+});
+
+// Verify email via token (user clicks link in email)
+router.get('/verify-email/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    // Find verification by token
+    const result = await pool.query(
+      `SELECT * FROM student_verifications
+       WHERE verification_token = $1`,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).send(`
+        <html>
+          <head><title>Invalid Link</title></head>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1>❌ Invalid Verification Link</h1>
+            <p>This verification link is invalid or has already been used.</p>
+          </body>
+        </html>
+      `);
+    }
+
+    const verification = result.rows[0];
+
+    // Check if token expired
+    if (new Date() > new Date(verification.token_expires_at)) {
+      return res.status(400).send(`
+        <html>
+          <head><title>Link Expired</title></head>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1>⏰ Verification Link Expired</h1>
+            <p>This verification link has expired. Please submit a new verification request.</p>
+          </body>
+        </html>
+      `);
+    }
+
+    // Check if already verified
+    if (verification.email_verified) {
+      return res.send(`
+        <html>
+          <head><title>Already Verified</title></head>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1>✓ Email Already Verified</h1>
+            <p>Your email has already been verified. An admin will review your request soon.</p>
+          </body>
+        </html>
+      `);
+    }
+
+    // Mark as verified and change status to pending (ready for admin review)
+    await pool.query(
+      `UPDATE student_verifications
+       SET email_verified = true,
+           status = 'pending',
+           verification_token = NULL
+       WHERE id = $1`,
+      [verification.id]
+    );
+
+    res.send(`
+      <html>
+        <head>
+          <title>Email Verified!</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              text-align: center;
+              padding: 50px;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+            }
+            .container {
+              background: white;
+              color: #333;
+              padding: 40px;
+              border-radius: 10px;
+              max-width: 500px;
+              margin: 0 auto;
+              box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            }
+            h1 { color: #10b981; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>✓ Email Verified!</h1>
+            <p><strong>Success!</strong> Your email has been verified.</p>
+            <p>An admin will review your student verification request and approve it within 24 hours.</p>
+            <p>You'll receive an email once approved.</p>
+            <p style="margin-top: 30px; color: #666; font-size: 14px;">You can close this window now.</p>
+          </div>
+        </body>
+      </html>
+    `);
+
+    console.log(`✅ Email verified for: ${verification.email}`);
+
+  } catch (error) {
+    console.error('Error verifying email:', error);
+    res.status(500).send('Error verifying email');
   }
 });
 
@@ -189,6 +318,15 @@ router.post('/admin/approve/:id', requireAdmin, async (req, res) => {
       });
     }
 
+    // Send approval email
+    try {
+      await sendStudentApprovalEmail(result.rows[0].email, expiresAt);
+      console.log(`✅ Approval email sent to ${result.rows[0].email}`);
+    } catch (emailError) {
+      console.error('❌ Error sending approval email:', emailError);
+      // Continue even if email fails
+    }
+
     // Log admin action
     await pool.query(
       `INSERT INTO admin_actions (admin_email, action, target_entity, target_id, details)
@@ -198,7 +336,7 @@ router.post('/admin/approve/:id', requireAdmin, async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Student verification approved',
+      message: 'Student verification approved and notification email sent',
       verification: result.rows[0]
     });
 
@@ -261,6 +399,52 @@ router.post('/admin/reject/:id', requireAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to reject verification'
+    });
+  }
+});
+
+// Admin: Delete verification
+router.delete('/admin/delete/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const adminEmail = req.admin.email;
+
+    // Get verification details before deleting
+    const verification = await pool.query(
+      'SELECT * FROM student_verifications WHERE id = $1',
+      [id]
+    );
+
+    if (verification.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Verification request not found'
+      });
+    }
+
+    // Delete the verification
+    await pool.query(
+      'DELETE FROM student_verifications WHERE id = $1',
+      [id]
+    );
+
+    // Log admin action
+    await pool.query(
+      `INSERT INTO admin_actions (admin_email, action, target_entity, target_id, details)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [adminEmail, 'delete_student_verification', 'student_verifications', id, JSON.stringify(verification.rows[0])]
+    );
+
+    res.json({
+      success: true,
+      message: 'Student verification deleted'
+    });
+
+  } catch (error) {
+    console.error('Error deleting verification:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete verification'
     });
   }
 });

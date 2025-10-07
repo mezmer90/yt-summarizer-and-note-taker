@@ -125,9 +125,111 @@ const sendUsageLimitEmail = async (email, userName, tier, limit) => {
   return sendEmail({ to: email, subject, html });
 };
 
+// Student verification email
+const sendStudentVerificationEmail = async (email, verificationToken) => {
+  const verificationUrl = `${process.env.BACKEND_URL || 'https://yt-summarizer-and-note-taker-production.up.railway.app'}/api/students/verify-email/${verificationToken}`;
+
+  const subject = '🎓 Verify Your Student Email - YouTube Summarizer Pro';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="margin: 0;">🎓 Student Verification</h1>
+        <p style="margin: 10px 0 0 0;">YouTube Summarizer Pro</p>
+      </div>
+
+      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+        <h2>Verify Your Student Email</h2>
+
+        <p>Hello!</p>
+
+        <p>You've requested student verification for YouTube Summarizer Pro. Click the button below to verify your email address:</p>
+
+        <center>
+          <a href="${verificationUrl}" style="display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0;">
+            ✓ Verify My Email
+          </a>
+        </center>
+
+        <p>Or copy and paste this link into your browser:</p>
+        <p style="word-break: break-all; color: #667eea;">${verificationUrl}</p>
+
+        <div style="background: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;">
+          <strong>⏰ Important:</strong> This verification link expires in 24 hours.
+        </div>
+
+        <p><strong>What happens next?</strong></p>
+        <ol>
+          <li>Click the verification link above</li>
+          <li>Your email will be verified</li>
+          <li>An admin will review your request</li>
+          <li>Once approved, you'll get 50% off on all student plans! 🎉</li>
+        </ol>
+
+        <p>If you didn't request this verification, you can safely ignore this email.</p>
+      </div>
+
+      <div style="text-align: center; margin-top: 30px; color: #666; font-size: 14px;">
+        <p>YouTube Summarizer Pro</p>
+        <p>AI-Powered Video Summarization</p>
+        <p style="font-size: 12px; margin-top: 20px;">
+          This is an automated email. Please do not reply to this message.
+        </p>
+      </div>
+    </div>
+  `;
+
+  return sendEmail({ to: email, subject, html });
+};
+
+// Student approval notification
+const sendStudentApprovalEmail = async (email, expiresAt) => {
+  const subject = '🎉 Student Verification Approved!';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+        <h1 style="margin: 0;">🎉 Congratulations!</h1>
+        <p style="margin: 10px 0 0 0;">Your Student Status is Approved</p>
+      </div>
+
+      <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
+        <h2>Welcome to Student Pricing!</h2>
+
+        <p>Great news! Your student verification has been approved.</p>
+
+        <div style="background: #e8f5e9; padding: 15px; border-left: 4px solid #4CAF50; margin: 20px 0;">
+          <strong>🎓 You now have access to:</strong>
+          <ul>
+            <li>50% OFF on all plans</li>
+            <li>Student Premium: $37/year (was $67)</li>
+            <li>Student Unlimited: $57/year (was $97)</li>
+            <li>Student Monthly: $9/month (was $17)</li>
+            <li>Student Annual: $47/year (was $97)</li>
+          </ul>
+        </div>
+
+        <p><strong>Your student status is valid until:</strong> ${new Date(expiresAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+
+        <p><strong>How to purchase a student plan:</strong></p>
+        <ol>
+          <li>Open the YouTube Summarizer Pro extension</li>
+          <li>Go to Settings tab</li>
+          <li>Click "View Student Plans (50% OFF)"</li>
+          <li>Choose your plan and complete purchase</li>
+        </ol>
+
+        <p>Start summarizing videos with AI today! 🚀</p>
+      </div>
+    </div>
+  `;
+
+  return sendEmail({ to: email, subject, html });
+};
+
 module.exports = {
   sendEmail,
   sendWelcomeEmail,
   sendUpgradeEmail,
-  sendUsageLimitEmail
+  sendUsageLimitEmail,
+  sendStudentVerificationEmail,
+  sendStudentApprovalEmail
 };
