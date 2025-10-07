@@ -138,12 +138,14 @@ INSERT INTO system_settings (setting_key, setting_value, description) VALUES
   ('require_api_key_for_free', 'true', 'Whether free users must provide their own API key'),
   ('require_api_key_for_premium', 'true', 'Whether premium users must provide their own API key'),
   ('require_api_key_for_unlimited', 'true', 'Whether unlimited users must provide their own API key'),
-  ('require_api_key_for_managed', 'false', 'Whether managed users must provide their own API key'),
+  ('require_api_key_for_managed', 'false', 'Whether managed users must provide their own API key (we handle it)'),
+  ('require_api_key_for_trial', 'false', 'Whether trial users must provide their own API key (we handle it)'),
   ('default_max_video_length_free', '30', 'Max video length in minutes for free tier'),
-  ('default_max_video_length_premium', '120', 'Max video length in minutes for premium tier'),
+  ('default_max_video_length_premium', '120', 'Max video length in minutes for premium tier (2 hours)'),
   ('default_max_video_length_unlimited', '999999', 'Max video length in minutes for unlimited tier'),
-  ('default_max_video_length_managed', '120', 'Max video length in minutes for managed tier'),
-  ('managed_plan_openrouter_key', '', 'OpenRouter API key for managed plans (encrypted)')
+  ('default_max_video_length_managed', '999999', 'Max video length in minutes for managed tier (unlimited)'),
+  ('default_max_video_length_trial', '999999', 'Max video length in minutes for trial tier (unlimited)'),
+  ('managed_plan_openrouter_key', '', 'OpenRouter API key for managed plans (backend uses this)')
 ON CONFLICT (setting_key) DO NOTHING;
 
 -- View for Admin Dashboard Stats
