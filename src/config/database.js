@@ -19,7 +19,8 @@ pool.on('connect', () => {
 
 pool.on('error', (err) => {
   console.error('❌ Unexpected database error:', err);
-  process.exit(-1);
+  // Don't exit - let the server continue running
+  // Individual queries will handle their own errors
 });
 
 // Helper function to execute queries
@@ -63,8 +64,27 @@ const getClient = async () => {
   return client;
 };
 
+// Test database connection on startup (non-blocking)
+const testConnection = async () => {
+  try {
+    const client = await pool.connect();
+    await client.query('SELECT NOW()');
+    client.release();
+    console.log('✅ Database connection test successful');
+    return true;
+  } catch (error) {
+    console.error('❌ Database connection test failed:', error.message);
+    console.error('Server will continue running, but database operations will fail');
+    return false;
+  }
+};
+
+// Run test connection asynchronously (don't block server startup)
+testConnection();
+
 module.exports = {
   pool,
   query,
-  getClient
+  getClient,
+  testConnection
 };
