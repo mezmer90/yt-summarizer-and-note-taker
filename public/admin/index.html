@@ -96,6 +96,23 @@
       <!-- Settings Tab -->
       <div id="settingsTab" class="tab-content">
         <h2>System Settings</h2>
+
+        <!-- Email Testing Section -->
+        <div class="settings-section">
+          <h3>📧 Email Service Testing</h3>
+          <p>Test if emails are being sent correctly from your configured email service.</p>
+          <div class="email-test-box">
+            <div class="form-group">
+              <label for="testEmail">Test Email Address:</label>
+              <input type="email" id="testEmail" placeholder="Enter email to receive test message" required>
+            </div>
+            <button id="sendTestEmailBtn" class="btn-test-email">
+              📨 Send Test Email
+            </button>
+            <div id="emailTestResult" class="test-result"></div>
+          </div>
+        </div>
+
         <div id="settingsList" class="settings-grid"></div>
       </div>
 
