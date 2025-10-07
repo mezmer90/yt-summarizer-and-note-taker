@@ -251,9 +251,8 @@ async function loadSettings() {
     settingsContainer.innerHTML = Object.entries(data.settings).map(([key, setting]) => {
       // Check if this is a boolean setting (true/false value)
       const isBooleanSetting = setting.value === 'true' || setting.value === 'false';
-      const isChecked = setting.value === 'true';
 
-      // Render toggle switch for boolean settings
+      // Render dropdown for boolean settings
       if (isBooleanSetting) {
         return `
           <div class="setting-item">
@@ -261,11 +260,12 @@ async function loadSettings() {
               <strong>${key.replace(/_/g, ' ').toUpperCase()}</strong>
               <br><small>${setting.description}</small>
             </label>
-            <label class="toggle-switch">
-              <input type="checkbox" id="setting-${key}" ${isChecked ? 'checked' : ''}
-                     onchange="updateSetting('${key}')">
-              <span class="toggle-slider"></span>
-            </label>
+            <div class="setting-controls">
+              <select id="setting-${key}" onchange="updateSetting('${key}')">
+                <option value="true" ${setting.value === 'true' ? 'selected' : ''}>True</option>
+                <option value="false" ${setting.value === 'false' ? 'selected' : ''}>False</option>
+              </select>
+            </div>
           </div>
         `;
       }
@@ -278,8 +278,10 @@ async function loadSettings() {
               <strong>${key.replace(/_/g, ' ').toUpperCase()}</strong>
               <br><small>${setting.description}</small>
             </label>
-            <input type="password" id="setting-${key}" value="${setting.value}" placeholder="Enter API key...">
-            <button onclick="updateSetting('${key}')">Save</button>
+            <div class="setting-controls">
+              <input type="password" id="setting-${key}" value="${setting.value}" placeholder="Enter API key...">
+              <button onclick="updateSetting('${key}')">Save</button>
+            </div>
           </div>
         `;
       }
@@ -291,8 +293,10 @@ async function loadSettings() {
             <strong>${key.replace(/_/g, ' ').toUpperCase()}</strong>
             <br><small>${setting.description}</small>
           </label>
-          <input type="text" id="setting-${key}" value="${setting.value}">
-          <button onclick="updateSetting('${key}')">Save</button>
+          <div class="setting-controls">
+            <input type="text" id="setting-${key}" value="${setting.value}">
+            <button onclick="updateSetting('${key}')">Save</button>
+          </div>
         </div>
       `;
     }).join('');
@@ -304,14 +308,8 @@ async function loadSettings() {
 // Update setting
 async function updateSetting(key) {
   const inputEl = document.getElementById(`setting-${key}`);
-
-  // Get value based on input type
-  let value;
-  if (inputEl.type === 'checkbox') {
-    value = inputEl.checked ? 'true' : 'false';
-  } else {
-    value = inputEl.value;
-  }
+  const value = inputEl.value;
+  const isDropdown = inputEl.tagName === 'SELECT';
 
   try {
     const response = await fetch(`${API_BASE}/admin/settings/${key}`, {
@@ -326,19 +324,15 @@ async function updateSetting(key) {
     if (!response.ok) throw new Error('Failed to update setting');
 
     // Show success message
-    if (inputEl.type === 'checkbox') {
+    if (isDropdown) {
       console.log(`✅ ${key} updated to: ${value}`);
-      // Auto-save for toggles, no alert needed
+      // Auto-save for dropdowns, no alert needed
     } else {
       alert(`✅ Setting updated!`);
     }
   } catch (error) {
     alert('❌ Failed to update setting');
     console.error(error);
-    // Revert checkbox on error
-    if (inputEl.type === 'checkbox') {
-      inputEl.checked = !inputEl.checked;
-    }
   }
 }
 

@@ -251,11 +251,34 @@ th {
   font-weight: 500;
 }
 
-.setting-item input {
-  padding: 8px;
+.setting-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.setting-item input,
+.setting-item select {
+  padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 5px;
-  width: 200px;
+  font-size: 14px;
+  min-width: 120px;
+}
+
+.setting-item select {
+  cursor: pointer;
+  background-color: white;
+}
+
+.setting-item select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.setting-item input[type="password"],
+.setting-item input[type="text"] {
+  width: 250px;
 }
 
 .setting-item button {
@@ -265,7 +288,11 @@ th {
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  margin-left: 10px;
+  font-size: 14px;
+}
+
+.setting-item button:hover {
+  background: #5568d3;
 }
 
 /* Loading */
@@ -273,61 +300,4 @@ th {
   text-align: center;
   padding: 40px;
   color: #7f8c8d;
-}
-
-/* Toggle Switch */
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 24px;
-  flex-shrink: 0;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: 0.3s;
-  border-radius: 24px;
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50%;
-}
-
-.toggle-switch input:checked + .toggle-slider {
-  background-color: #667eea;
-}
-
-.toggle-switch input:focus + .toggle-slider {
-  box-shadow: 0 0 1px #667eea;
-}
-
-.toggle-switch input:checked + .toggle-slider:before {
-  transform: translateX(26px);
-}
-
-/* Disabled state */
-.toggle-switch input:disabled + .toggle-slider {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
